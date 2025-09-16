@@ -28,9 +28,7 @@ app.use(bodyParser.json());
 
 // --- Configuración simple ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mi_secreto_super_seguro_123';
 const TOKEN_EXPIRATION = '1h'; // o '7d' según prefieras

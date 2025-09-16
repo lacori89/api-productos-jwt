@@ -64,6 +64,7 @@ function verificarToken(req, res, next) {
  * /productos:
  *   get:
  *     summary: Listar todos los productos
+ *     "tags": ["Productos"],
  *     responses:
  *       200:
  *         description: Lista de productos
@@ -114,7 +115,6 @@ app.post("/productos", verificarToken, (req, res) => {
 *"/productos/{id}": {
 *  "get": {
 *    "summary": "Obtener un producto por ID",
-*    "tags": ["Productos"],
 *    "security": [{ "bearerAuth": [] }],
 *    "parameters": [
 *      {

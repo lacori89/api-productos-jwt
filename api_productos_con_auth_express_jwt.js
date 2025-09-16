@@ -1,50 +1,25 @@
-// api_productos_con_auth_express_jwt.js
-// Ejemplo de API REST para "productos" con autenticación mediante token (JWT)
-// con documentación Swagger incluida.
-
-const express = require('express');
-const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
-
-// --- Swagger ---
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
+const swaggerJsDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 
 const app = express();
-app.use(cors());
 app.use(bodyParser.json());
 
-// --- Configuración simple ---
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'mi_secreto_super_seguro_123';
-const TOKEN_EXPIRATION = '1h';
-
-// Credenciales de ejemplo
-const USERS = [
-  { id: 1, username: 'admin', password: 'password123', role: 'admin' }
+const SECRET_KEY = "miclaveultrasecreta";
+let productos = [
+   { id: 1, name: 'Zapatillas', price: 79.9, stock: 10 },
+   { id: 2, name: 'Camiseta', price: 19.9, stock: 50 }
 ];
 
-// Datos en memoria
-let products = [
-  { id: 1, name: 'Zapatillas', price: 79.9, stock: 10 },
-  { id: 2, name: 'Camiseta', price: 19.9, stock: 50 }
-];
-let nextProductId = 3;
-
-// --- Helper: generar token ---
-function generateToken(user) {
-  const payload = { id: user.id, username: user.username, role: user.role };
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRATION });
-}
-
-// --- Ruta de autenticación ---
+// ================== AUTENTICACIÓN ==================
 /**
- * @openapi
+ * @swagger
  * /auth:
  *   post:
- *     summary: Obtener token de autenticación
- *     tags: [Auth]
+ *     summary: Crear token de autenticación
+ *     description: Retorna un token JWT si el usuario y contraseña son correctos.
  *     requestBody:
  *       required: true
  *       content:
@@ -54,162 +29,174 @@ function generateToken(user) {
  *             properties:
  *               username:
  *                 type: string
+ *                 example: emilys
  *               password:
  *                 type: string
+ *                 example: emilyspass
  *     responses:
  *       200:
- *         description: Devuelve el token JWT
+ *         description: Token generado
  */
-app.post('/auth', (req, res) => {
-  const { username, password } = req.body || {};
-  const user = USERS.find(u => u.username === username && u.password === password);
-  if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
-  const token = generateToken(user);
-  res.json({ token });
+app.post("/auth", (req, res) => {
+  const { username, password } = req.body;
+  if (username === "emilys" && password === "emilyspass") {
+    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: "10m" });
+    return res.json({ token });
+  }
+  res.status(401).json({ message: "Credenciales inválidas" });
 });
 
-// --- Middleware para proteger rutas ---
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.status(401).json({ error: 'No se encontró el header Authorization' });
-
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ error: 'Formato de Authorization: Bearer <token>' });
-
-  const token = parts[1];
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Token inválido o expirado' });
+// Middleware para verificar token
+function verificarToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) return res.sendStatus(403);
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.sendStatus(403);
     req.user = user;
     next();
   });
 }
 
-// --- Endpoints CRUD para productos ---
+// ================== CRUD PRODUCTOS ==================
 /**
- * @openapi
- * /products:
+ * @swagger
+ * /productos:
  *   get:
  *     summary: Listar todos los productos
- *     tags: [Productos]
  *     responses:
  *       200:
  *         description: Lista de productos
+ *
+ *   post:
+ *     summary: Crear un nuevo producto
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: blusa
+ *               price:
+ *                 type: number
+ *                 example: 100
+ *               stock:
+ *                 type: number
+ *                 example: 15
+ *     responses:
+ *       201:
+ *         description: Producto creado
  */
-app.get('/products', (req, res) => {
-  res.json(products);
+app.get("/productos", (req, res) => {
+  res.json(productos);
+});
+
+app.post("/productos", verificarToken, (req, res) => {
+  const { name, price, stock } = req.body;
+  const nuevoProducto = { id: productos.length + 1, name, price, stock };
+  productos.push(nuevoProducto);
+  res.status(201).json(nuevoProducto);
 });
 
 /**
- * @openapi
- * /products/{id}:
- *   get:
- *     summary: Obtener producto por ID
- *     tags: [Productos]
+ * @swagger
+ * /productos/{id}:
+ *   put:
+ *     summary: Actualizar un producto por ID
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: tenis
+ *               price:
+ *                 type: number
+ *                 example: 300
+ *               stock:
+ *                 type: number
+ *                 example: 5
+ *     responses:
+ *       200:
+ *         description: Producto actualizado
+ *
+ *   delete:
+ *     summary: Eliminar un producto por ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
  *         schema:
  *           type: integer
  *     responses:
  *       200:
- *         description: Producto encontrado
+ *         description: Producto eliminado
  */
-app.get('/products/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const p = products.find(x => x.id === id);
-  if (!p) return res.status(404).json({ error: 'Producto no encontrado' });
-  res.json(p);
+app.put("/productos/:id", verificarToken, (req, res) => {
+  const { id } = req.params;
+  const { name, price, stock } = req.body;
+  const producto = productos.find((p) => p.id == id);
+  if (!producto) return res.status(404).json({ message: "Producto no encontrado" });
+  producto.name = name;
+  producto.price = price;
+  producto.stock = stock;
+  res.json(producto);
 });
 
-/**
- * @openapi
- * /products:
- *   post:
- *     summary: Crear un nuevo producto
- *     tags: [Productos]
- *     security:
- *       - bearerAuth: []
- */
-app.post('/products', authenticateToken, (req, res) => {
-  const { name, price, stock } = req.body || {};
-  if (!name || price == null || stock == null) return res.status(400).json({ error: 'name, price y stock son requeridos' });
-
-  const newProduct = { id: nextProductId++, name, price: Number(price), stock: Number(stock) };
-  products.push(newProduct);
-  res.status(201).json(newProduct);
+app.delete("/productos/:id", verificarToken, (req, res) => {
+  const { id } = req.params;
+  productos = productos.filter((p) => p.id != id);
+  res.json({ message: "Producto eliminado" });
 });
 
-/**
- * @openapi
- * /products/{id}:
- *   put:
- *     summary: Actualizar producto existente
- *     tags: [Productos]
- *     security:
- *       - bearerAuth: []
- */
-app.put('/products/:id', authenticateToken, (req, res) => {
-  const id = Number(req.params.id);
-  const pIndex = products.findIndex(x => x.id === id);
-  if (pIndex === -1) return res.status(404).json({ error: 'Producto no encontrado' });
-
-  const { name, price, stock } = req.body || {};
-  const updated = { ...products[pIndex], name, price, stock };
-  products[pIndex] = updated;
-  res.json(updated);
-});
-
-/**
- * @openapi
- * /products/{id}:
- *   delete:
- *     summary: Eliminar producto
- *     tags: [Productos]
- *     security:
- *       - bearerAuth: []
- */
-app.delete('/products/:id', authenticateToken, (req, res) => {
-  const id = Number(req.params.id);
-  const pIndex = products.findIndex(x => x.id === id);
-  if (pIndex === -1) return res.status(404).json({ error: 'Producto no encontrado' });
-  const removed = products.splice(pIndex, 1)[0];
-  res.json({ deleted: removed });
-});
-
-// --- Swagger config ---
+// ================== SWAGGER CONFIG ==================
 const swaggerOptions = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'API de Productos con JWT',
-      version: '1.0.0',
-      description: 'Documentación de la API para prácticas con autenticación JWT'
+      title: "API de Productos con JWT",
+      version: "1.0.0",
+      description: "API de ejemplo con autenticación JWT para prácticas",
     },
     servers: [
-      { url: 'https://api-productos-jwt.onrender.com' }
+      {
+        url: "https://api-productos-jwt.onrender.com", // 🔹 tu dominio de Render
+      },
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT'
-        }
-      }
-    }
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
   },
-  apis: [__filename], // este mismo archivo
+  apis: ["./api_productos_con_auth_express_jwt.js"],
 };
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// --- Ruta raíz ---
-app.get('/', (req, res) => {
-  res.send('<h1>API de Productos con JWT</h1><p>Visita <a href="/docs">/docs</a> para ver la documentación interactiva.</p>');
-});
-
-// --- Servidor ---
-app.listen(PORT, () => {
-  console.log(`API de productos corriendo en http://localhost:${PORT}`);
-});
+// ================== INICIO SERVIDOR ==================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

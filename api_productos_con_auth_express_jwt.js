@@ -151,7 +151,7 @@ app.post("/productos", verificarToken, (req, res) => {
 *}
 */
 // Obtener producto por ID
-app.get('/productos/:id', authenticateToken, (req, res) => {
+app.get('/productos/:id', verificarToken, (req, res) => {
   const { id } = req.params;
   const producto = productos.find(p => p.id === parseInt(id));
   

@@ -9,8 +9,8 @@ app.use(bodyParser.json());
 
 const SECRET_KEY = "miclaveultrasecreta";
 let productos = [
-   { id: 1, name: 'Zapatillas', price: 79.9, stock: 10, color: blue, brand: Essence },
-   { id: 2, name: 'Camiseta', price: 19.9, stock: 50, color: white, brand: Ess }
+  { id: 1, name: "Zapatillas", price: 79.9, stock: 10, color: "blue", brand: "Essence" },
+  { id: 2, name: "Camiseta", price: 25.5, stock: 20, color: "red", brand: "Nike" }
 ];
 
 // ================== AUTENTICACIÓN ==================

@@ -1,0 +1,14 @@
+{
+  "name": "api-productos",
+  "version": "1.0.0",
+  "main": "api_productos_con_auth_express_jwt.js",
+  "scripts": {
+    "start": "node api_productos_con_auth_express_jwt.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5"
+  }
+}

@@ -111,6 +111,59 @@ app.post("/productos", verificarToken, (req, res) => {
 
 /**
  * @swagger
+*"/productos/{id}": {
+*  "get": {
+*    "summary": "Obtener un producto por ID",
+*    "tags": ["Productos"],
+*    "security": [{ "bearerAuth": [] }],
+*    "parameters": [
+*      {
+*        "name": "id",
+*        "in": "path",
+*        "required": true,
+*        "schema": {
+*          "type": "integer"
+*        },
+*        "description": "ID del producto a consultar"
+*      }
+*    ],
+*    "responses": {
+*      "200": {
+*        "description": "Producto encontrado",
+*        "content": {
+*          "application/json": {
+*            "example": {
+*              "id": 1,
+*              "name": "Zapatillas",
+*              "price": 79.9,
+*              "stock": 10,
+*              "color": "blue",
+*              "brand": "Essence"
+*            }
+*          }
+*        }
+*      },
+*      "404": {
+*        "description": "Producto no encontrado"
+*      }
+*   }
+* }
+*}
+*/
+// Obtener producto por ID
+app.get('/productos/:id', authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const producto = productos.find(p => p.id === parseInt(id));
+  
+  if (!producto) {
+    return res.status(404).json({ message: "Producto no encontrado" });
+  }
+
+  res.json(producto);
+});
+
+/**
+ * @swagger
  * /productos/{id}:
  *   put:
  *     summary: Actualizar un producto por ID

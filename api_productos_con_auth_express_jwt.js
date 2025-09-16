@@ -199,4 +199,33 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // ================== INICIO SERVIDOR ==================
 const PORT = process.env.PORT || 3000;
+// Página de inicio con criterios del parcial
+app.get("/", (req, res) => {
+  res.send(`
+    <h1>API de Productos con Auth (JWT)</h1>
+    <p><b>Criterios del parcial:</b></p>
+    <ul>
+      <li>1️⃣ Crear la colección en Postman.</li>
+      <li>2️⃣ Crear variables de entorno para: <code>username</code>, <code>password</code>, <code>token</code>, <code>nombre</code>, <code>precio</code>, <code>id</code>, <code>cantidad</code>.</li>
+      <li>3️⃣ Ejecutar flujos de trabajo de API (Create, Read, Update, Delete).</li>
+      <li>4️⃣ Escribir y depurar scripts de prueba (<i>Tests</i>) y de pre-solicitud (<i>Pre-request</i>).</li>
+      <li>5️⃣ Utilizar variables de entorno y variables dinámicas de Postman.</li>
+      <li>6️⃣ Generar un reporte de la ejecución utilizando Newman.</li>
+      <li>7️⃣ Verificar que el código de estado sea <b>200</b> en todos los request.</li>
+      <li>8️⃣ Verificar que en la variable de entorno se almacenen los datos modificados del producto.</li>
+    </ul>
+    <p>👉 Endpoints disponibles:</p>
+    <ul>
+      <li><code>POST /auth</code> → obtener token</li>
+      <li><code>GET /products</code> → listar productos</li>
+      <li><code>GET /products/:id</code> → detalle producto</li>
+      <li><code>POST /products</code> → crear producto (requiere token)</li>
+      <li><code>PUT /products/:id</code> → actualizar producto (requiere token)</li>
+      <li><code>DELETE /products/:id</code> → eliminar producto (requiere token)</li>
+    </ul>
+    <hr>
+    <p>ℹ️ Usa Postman para interactuar con la API.</p>
+  `);
+});
+
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

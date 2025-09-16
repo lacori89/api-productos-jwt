@@ -1,26 +1,15 @@
-// product-api-express-jwt.js
+// api_productos_con_auth_express_jwt.js
 // Ejemplo de API REST para "productos" con autenticación mediante token (JWT)
-// Requisitos: Node.js 18+ (o similar)
-
-/**
- * Instrucciones rápidas:
- * 1) Crear carpeta y archivo:
- *    mkdir product-api && cd product-api
- *    npm init -y
- * 2) Instalar dependencias:
- *    npm install express jsonwebtoken body-parser cors
- *    (opcional: npm install -D nodemon)
- * 3) Copiar este archivo como product-api-express-jwt.js
- * 4) Ejecutar:
- *    node product-api-express-jwt.js
- *    (o con nodemon: npx nodemon product-api-express-jwt.js)
- * 5) Probar en Postman / curl usando los ejemplos abajo.
- */
+// con documentación Swagger incluida.
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+
+// --- Swagger ---
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 app.use(cors());
@@ -28,18 +17,15 @@ app.use(bodyParser.json());
 
 // --- Configuración simple ---
 const PORT = process.env.PORT || 3000;
-
-
 const JWT_SECRET = process.env.JWT_SECRET || 'mi_secreto_super_seguro_123';
-const TOKEN_EXPIRATION = '1h'; // o '7d' según prefieras
+const TOKEN_EXPIRATION = '1h';
 
-// Credenciales de ejemplo (en un proyecto real usar DB y hashed passwords)
+// Credenciales de ejemplo
 const USERS = [
-  { id: 1, username: 'emilys', password: 'emilyspass', role: 'admin' },
-  { id: 2, username: 'emilys', password: 'emilyspass', role: 'user' }
+  { id: 1, username: 'admin', password: 'password123', role: 'admin' }
 ];
 
-// Datos en memoria (para pruebas); en producción usar una DB
+// Datos en memoria
 let products = [
   { id: 1, name: 'Zapatillas', price: 79.9, stock: 10 },
   { id: 2, name: 'Camiseta', price: 19.9, stock: 50 }
@@ -48,20 +34,36 @@ let nextProductId = 3;
 
 // --- Helper: generar token ---
 function generateToken(user) {
-  // Payload mínimo: id, username, role
   const payload = { id: user.id, username: user.username, role: user.role };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRATION });
 }
 
-// --- Ruta de autenticación (similar a Restful-Booker) ---
-// POST /auth  --> { username, password }  devuelve { token }
+// --- Ruta de autenticación ---
+/**
+ * @openapi
+ * /auth:
+ *   post:
+ *     summary: Obtener token de autenticación
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Devuelve el token JWT
+ */
 app.post('/auth', (req, res) => {
   const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: 'username y password son requeridos' });
-
   const user = USERS.find(u => u.username === username && u.password === password);
   if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
-
   const token = generateToken(user);
   res.json({ token });
 });
@@ -77,24 +79,41 @@ function authenticateToken(req, res, next) {
   const token = parts[1];
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Token inválido o expirado' });
-    req.user = user; // payload del token
+    req.user = user;
     next();
   });
 }
 
 // --- Endpoints CRUD para productos ---
-// GET /products            -> listar (público)
-// GET /products/:id        -> detalle (público)
-// POST /products           -> crear (requiere token)
-// PUT /products/:id        -> actualizar (requiere token)
-// DELETE /products/:id     -> eliminar (requiere token)
-
-// Listar (público)
+/**
+ * @openapi
+ * /products:
+ *   get:
+ *     summary: Listar todos los productos
+ *     tags: [Productos]
+ *     responses:
+ *       200:
+ *         description: Lista de productos
+ */
 app.get('/products', (req, res) => {
   res.json(products);
 });
 
-// Detalle (público)
+/**
+ * @openapi
+ * /products/{id}:
+ *   get:
+ *     summary: Obtener producto por ID
+ *     tags: [Productos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Producto encontrado
+ */
 app.get('/products/:id', (req, res) => {
   const id = Number(req.params.id);
   const p = products.find(x => x.id === id);
@@ -102,7 +121,15 @@ app.get('/products/:id', (req, res) => {
   res.json(p);
 });
 
-// Crear (protegido)
+/**
+ * @openapi
+ * /products:
+ *   post:
+ *     summary: Crear un nuevo producto
+ *     tags: [Productos]
+ *     security:
+ *       - bearerAuth: []
+ */
 app.post('/products', authenticateToken, (req, res) => {
   const { name, price, stock } = req.body || {};
   if (!name || price == null || stock == null) return res.status(400).json({ error: 'name, price y stock son requeridos' });
@@ -112,23 +139,35 @@ app.post('/products', authenticateToken, (req, res) => {
   res.status(201).json(newProduct);
 });
 
-// Actualizar (protegido)
+/**
+ * @openapi
+ * /products/{id}:
+ *   put:
+ *     summary: Actualizar producto existente
+ *     tags: [Productos]
+ *     security:
+ *       - bearerAuth: []
+ */
 app.put('/products/:id', authenticateToken, (req, res) => {
   const id = Number(req.params.id);
   const pIndex = products.findIndex(x => x.id === id);
   if (pIndex === -1) return res.status(404).json({ error: 'Producto no encontrado' });
 
   const { name, price, stock } = req.body || {};
-  const updated = Object.assign({}, products[pIndex]);
-  if (name !== undefined) updated.name = name;
-  if (price !== undefined) updated.price = Number(price);
-  if (stock !== undefined) updated.stock = Number(stock);
-
+  const updated = { ...products[pIndex], name, price, stock };
   products[pIndex] = updated;
   res.json(updated);
 });
 
-// Eliminar (protegido)
+/**
+ * @openapi
+ * /products/{id}:
+ *   delete:
+ *     summary: Eliminar producto
+ *     tags: [Productos]
+ *     security:
+ *       - bearerAuth: []
+ */
 app.delete('/products/:id', authenticateToken, (req, res) => {
   const id = Number(req.params.id);
   const pIndex = products.findIndex(x => x.id === id);
@@ -137,49 +176,40 @@ app.delete('/products/:id', authenticateToken, (req, res) => {
   res.json({ deleted: removed });
 });
 
-// --- Servidor ---
-app.listen(PORT, () => {
-  console.log(`API de productos con auth corriendo en http://localhost:${PORT}`);
-  console.log(`Usuario de prueba: admin / password123 -> POST /auth devuelve token`);
+// --- Swagger config ---
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'API de Productos con JWT',
+      version: '1.0.0',
+      description: 'Documentación de la API para prácticas con autenticación JWT'
+    },
+    servers: [
+      { url: 'https://api-productos-jwt.onrender.com' }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    }
+  },
+  apis: [__filename], // este mismo archivo
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// --- Ruta raíz ---
+app.get('/', (req, res) => {
+  res.send('<h1>API de Productos con JWT</h1><p>Visita <a href="/docs">/docs</a> para ver la documentación interactiva.</p>');
 });
 
-/*
-Ejemplos curl para Postman / terminal:
-
-1) Obtener token (igual que el ejemplo que mostraste):
-
-curl -X POST http://localhost:3000/auth \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"password123"}'
-
-Respuesta: { "token": "eyJ..." }
-
-2) Crear producto (usar token obtenido):
-
-curl -X POST http://localhost:3000/products \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer <TOKEN>' \
-  -d '{"name":"Gorra","price":12.5,"stock":30}'
-
-3) Listar productos (público):
-
-curl http://localhost:3000/products
-
-4) Actualizar:
-
-curl -X PUT http://localhost:3000/products/1 \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer <TOKEN>' \
-  -d '{"price":99.9}'
-
-5) Eliminar:
-
-curl -X DELETE http://localhost:3000/products/2 \
-  -H 'Authorization: Bearer <TOKEN>'
-
-Notas / mejoras sugeridas:
-- Para persistencia entre reinicios usa una DB (SQLite, Postgres, MongoDB) o un archivo JSON con lowdb.
-- Guarda contraseñas hasheadas (bcrypt) y no en plano.
-- Configura HTTPS en producción y un secreto JWT seguro en variables de entorno.
-- Control de roles: hoy cualquier usuario con token puede crear/editar; puedes restringir por role (ej: only admin).
-*/
+// --- Servidor ---
+app.listen(PORT, () => {
+  console.log(`API de productos corriendo en http://localhost:${PORT}`);
+});

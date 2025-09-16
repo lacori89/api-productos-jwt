@@ -9,8 +9,8 @@ app.use(bodyParser.json());
 
 const SECRET_KEY = "miclaveultrasecreta";
 let productos = [
-   { id: 1, name: 'Zapatillas', price: 79.9, stock: 10 },
-   { id: 2, name: 'Camiseta', price: 19.9, stock: 50 }
+   { id: 1, name: 'Zapatillas', price: 79.9, stock: 10, color: azul, brand: Essence },
+   { id: 2, name: 'Camiseta', price: 19.9, stock: 50, color: blanca, brand: Ess }
 ];
 
 // ================== AUTENTICACIÓN ==================
@@ -88,6 +88,12 @@ function verificarToken(req, res, next) {
  *               stock:
  *                 type: number
  *                 example: 15
+ *               color:
+ *                 type: string
+ *                 example: cafe
+ *               brand:
+ *                 type: string
+ *                 example: bce
  *     responses:
  *       201:
  *         description: Producto creado
@@ -97,8 +103,8 @@ app.get("/productos", (req, res) => {
 });
 
 app.post("/productos", verificarToken, (req, res) => {
-  const { name, price, stock } = req.body;
-  const nuevoProducto = { id: productos.length + 1, name, price, stock };
+  const { name, price, stock, color, brand } = req.body;
+  const nuevoProducto = { id: productos.length + 1, name, price, stock, color, brand};
   productos.push(nuevoProducto);
   res.status(201).json(nuevoProducto);
 });
@@ -132,6 +138,12 @@ app.post("/productos", verificarToken, (req, res) => {
  *               stock:
  *                 type: number
  *                 example: 5
+ *               color:
+ *                 type: string
+ *                 example: gris
+ *               brand:
+ *                 type: string
+ *                 example: nice
  *     responses:
  *       200:
  *         description: Producto actualizado
@@ -152,12 +164,14 @@ app.post("/productos", verificarToken, (req, res) => {
  */
 app.put("/productos/:id", verificarToken, (req, res) => {
   const { id } = req.params;
-  const { name, price, stock } = req.body;
+  const { name, price, stock, color, brand } = req.body;
   const producto = productos.find((p) => p.id == id);
   if (!producto) return res.status(404).json({ message: "Producto no encontrado" });
   producto.name = name;
   producto.price = price;
   producto.stock = stock;
+  producto.color = color;
+  producto.brand = brand;
   res.json(producto);
 });
 
@@ -204,16 +218,21 @@ app.get("/", (req, res) => {
   res.send(`
     <h1>API de Productos con Auth (JWT)</h1>
     <p><b>Criterios del parcial:</b></p>
-    <ul>
+    <ul style="list-style: none;">
       <li>1️⃣ Crear la colección en Postman.</li>
-      <li>2️⃣ Crear variables de entorno para: <code>username</code>, <code>password</code>, <code>token</code>, <code>nombre</code>, <code>precio</code>, <code>id</code>, <code>cantidad</code>.</li>
-      <li>3️⃣ Ejecutar flujos de trabajo de API (Create, Read, Update, Delete).</li>
-      <li>4️⃣ Escribir y depurar scripts de prueba (<i>Tests</i>) y de pre-solicitud (<i>Pre-request</i>).</li>
-      <li>5️⃣ Utilizar variables de entorno y variables dinámicas de Postman.</li>
-      <li>6️⃣ Generar un reporte de la ejecución utilizando Newman.</li>
-      <li>7️⃣ Verificar que el código de estado sea <b>200</b> en todos los request.</li>
-      <li>8️⃣ Verificar que en la variable de entorno se almacenen los datos modificados del producto.</li>
+      <li>2️⃣ Configurar variables de entorno para: <code>username</code> y <code>password</code>.</li>
+      <li>3️⃣ Crear el script de prueba (<i>Tests</i>) en la solicitud <b>"Token"</b> para capturar el token de la respuesta y almacenarlo en una variable de entorno llamada <code>authToken</code>.</li>
+      <li>4️⃣ Ejecutar el flujo de trabajo de API con los métodos: Create, Read, Update y Delete (CRUD).</li>
+      <li>5️⃣ Escribir scripts de prueba (<i>Tests</i>) para validar los campos: <code>id</code>, <code>name</code>, <code>price</code>, <code>stock</code>, <code>color</code> y <code>brand</code>, y guardar sus valores en variables de entorno.</li>
+      <li>6️⃣ Utilizar variables aleatorias para el campo <code>color</code>.</li>
+      <li>7️⃣ Emplear tanto variables de entorno como variables dinámicas de Postman en las solicitudes.</li>
+      <li>8️⃣ Generar un reporte de ejecución utilizando Newman.</li>
+      <li>9️⃣ Verificar que el código de estado sea <b>200</b> o <b>201</b> en todas las solicitudes.</li>
+      <li>🔟 Validar que en las variables de entorno se almacenen correctamente los datos modificados del producto.</li>
     </ul>
+    '<p>👉 Documentación interactiva (Swagger UI): <a href="https://api-productos-jwt.onrender.com/api-docs">https://api-productos-jwt.onrender.com/api-docs</a></p>' +
+    '<p>📧 Entregar: Deben enviar las colecciones de Postman (.json) y el archivo generado del reporte de Newman (.html o .json) al correo: <a href="mailto:lriano@unisangil.edu.co">lriano@unisangil.edu.co</a></p>' +
+    '<hr>' +
     <p>👉 Endpoints disponibles:</p>
     <ul>
       <li><code>POST /auth</code> → obtener token</li>
@@ -224,7 +243,7 @@ app.get("/", (req, res) => {
       <li><code>DELETE /products/:id</code> → eliminar producto (requiere token)</li>
     </ul>
     <hr>
-    <p>ℹ️ Usa Postman para interactuar con la API.</p>
+    <p>ℹ️ Usa Postman para interactuar con la API. </p>
   `);
 });
 

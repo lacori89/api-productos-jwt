@@ -230,9 +230,10 @@ app.get("/", (req, res) => {
       <li>9️⃣ Verificar que el código de estado sea <b>200</b> o <b>201</b> en todas las solicitudes.</li>
       <li>🔟 Validar que en las variables de entorno se almacenen correctamente los datos modificados del producto.</li>
     </ul>
-    '<p>👉 Documentación interactiva (Swagger UI): <a href="https://api-productos-jwt.onrender.com/api-docs">https://api-productos-jwt.onrender.com/api-docs</a></p>' +
-    '<p>📧 Entregar: Deben enviar las colecciones de Postman (.json) y el archivo generado del reporte de Newman (.html o .json) al correo: <a href="mailto:lriano@unisangil.edu.co">lriano@unisangil.edu.co</a></p>' +
-    '<hr>' +
+    <hr>
+    <p>👉 Documentación interactiva (Swagger UI): <a href="https://api-productos-jwt.onrender.com/api-docs">https://api-productos-jwt.onrender.com/api-docs</a></p>
+    <p>📧 Entregar: Deben enviar las colecciones de Postman (.json) y el archivo generado del reporte de Newman (.html o .json) al correo: <a href="mailto:lriano@unisangil.edu.co">lriano@unisangil.edu.co</a></p>
+    <hr>
     <p>👉 Endpoints disponibles:</p>
     <ul>
       <li><code>POST /auth</code> → obtener token</li>

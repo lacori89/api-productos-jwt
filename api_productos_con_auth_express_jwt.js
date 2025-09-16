@@ -9,8 +9,8 @@ app.use(bodyParser.json());
 
 const SECRET_KEY = "miclaveultrasecreta";
 let productos = [
-   { id: 1, name: 'Zapatillas', price: 79.9, stock: 10, color: azul, brand: Essence },
-   { id: 2, name: 'Camiseta', price: 19.9, stock: 50, color: blanca, brand: Ess }
+   { id: 1, name: 'Zapatillas', price: 79.9, stock: 10, color: blue, brand: Essence },
+   { id: 2, name: 'Camiseta', price: 19.9, stock: 50, color: white, brand: Ess }
 ];
 
 // ================== AUTENTICACIÓN ==================
@@ -90,7 +90,7 @@ function verificarToken(req, res, next) {
  *                 example: 15
  *               color:
  *                 type: string
- *                 example: cafe
+ *                 example: black
  *               brand:
  *                 type: string
  *                 example: bce
@@ -140,7 +140,7 @@ app.post("/productos", verificarToken, (req, res) => {
  *                 example: 5
  *               color:
  *                 type: string
- *                 example: gris
+ *                 example: black
  *               brand:
  *                 type: string
  *                 example: nice
